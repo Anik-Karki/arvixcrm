@@ -43,7 +43,4 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Development SQL scripts (keep locally, not in Git)
-*DIAGNOSE*.sql
-*FIX*.sql
-*DEBUG*.sql
+# Note: Keeping all SQL files for project history
