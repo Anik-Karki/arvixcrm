@@ -1,0 +1,262 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --shadow-panel: 0 1px 2px oklch(0.2 0.04 250 / 0.06), 0 12px 32px oklch(0.2 0.04 250 / 0.08);
+  --shadow-float: 0 24px 60px oklch(0.2 0.05 250 / 0.18);
+}
+
+:root {
+  --radius: 0.75rem;
+  
+  /* Averix Growth Design System - Primary Navy Palette */
+  --color-primary-navy: #081A33;
+  --color-deep-navy: #0B1428;
+  --color-sidebar-navy: #0B1730;
+  --color-sidebar-active: #152B4D;
+  
+  /* Background & Surfaces */
+  --color-bg-main: #F4F7FB;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F8FAFC;
+  
+  /* Text Colors */
+  --color-text-heading: #0F172A;
+  --color-text-body: #334155;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+  
+  /* Borders */
+  --color-border-default: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-border-subtle: #F1F5F9;
+  
+  /* Brand Colors */
+  --color-brand-blue: #2563EB;
+  --color-brand-blue-hover: #1D4ED8;
+  --color-brand-blue-soft: #EFF6FF;
+  --color-brand-gold: #F5B800;
+  --color-brand-gold-hover: #D99F00;
+  --color-brand-gold-soft: #FFF8DB;
+  
+  /* Semantic Colors */
+  --color-success: #10B981;
+  --color-success-soft: #ECFDF5;
+  --color-warning: #F59E0B;
+  --color-warning-soft: #FFFBEB;
+  --color-danger: #EF4444;
+  --color-danger-soft: #FEF2F2;
+  --color-info: #3B82F6;
+  --color-info-soft: #EFF6FF;
+  
+  /* Layout */
+  --sidebar-width-expanded: 280px;
+  --sidebar-width-collapsed: 72px;
+  --header-height: 64px;
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Legacy variables for backwards compatibility */
+  --background: var(--color-bg-main);
+  --foreground: var(--color-text-body);
+  --surface: var(--color-sidebar-navy);
+  --surface-foreground: #F8FAFC;
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-body);
+  --primary: var(--color-brand-blue);
+  --primary-foreground: #FFFFFF;
+  --secondary: #F1F5F9;
+  --secondary-foreground: var(--color-text-body);
+  --muted: #F8FAFC;
+  --muted-foreground: var(--color-text-secondary);
+  --accent: var(--color-brand-gold);
+  --accent-foreground: #0A0E27;
+  --destructive: var(--color-danger);
+  --destructive-foreground: #FFFFFF;
+  --success: var(--color-success);
+  --success-foreground: #FFFFFF;
+  --warning: var(--color-warning);
+  --warning-foreground: #713F12;
+  --border: var(--color-border-default);
+  --input: var(--color-border-strong);
+  --ring: var(--color-brand-blue);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility panel {
+  background-color: var(--color-card);
+  color: var(--color-card-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-panel);
+}
+
+@utility btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  transition: all 150ms ease;
+  cursor: pointer;
+}
+
+@utility btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+@utility btn-primary-hover {
+  filter: brightness(1.08);
+}
+
+@utility btn-outline {
+  background-color: transparent;
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+}
+
+@utility field {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-input);
+  background-color: var(--color-card);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.875rem;
+  color: var(--color-foreground);
+  outline: none;
+}
+@utility field-focus {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 3px oklch(0.53 0.14 235 / 0.18);
+}
+
+/* Averix Growth Premium Components */
+@utility premium-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  transition: box-shadow var(--transition-normal);
+}
+
+@utility premium-card-hover {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+@utility status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+@utility status-badge-active {
+  background-color: var(--color-success-soft);
+  color: var(--color-success);
+  border: 1px solid #86EFAC;
+}
+
+@utility status-badge-pending {
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning);
+  border: 1px solid #FCD34D;
+}
+
+@utility status-badge-inactive {
+  background-color: #F1F5F9;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-strong);
+}
+
+@utility status-badge-danger {
+  background-color: var(--color-danger-soft);
+  color: var(--color-danger);
+  border: 1px solid #FCA5A5;
+}
+
+@utility data-table-header {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+@utility sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: #94A3B8;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+@utility sidebar-nav-item-hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+}
+
+@utility sidebar-nav-item-active {
+  background-color: var(--color-sidebar-active);
+  color: #FFFFFF;
+  border-left: 3px solid var(--color-brand-gold);
+  padding-left: 13px;
+}
