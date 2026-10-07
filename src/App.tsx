@@ -12,7 +12,7 @@ import PlayersPage      from "@/pages/PlayersPage";
 import LeadsPage        from "@/pages/LeadsPage";
 import DealsPage        from "@/pages/DealsPage";
 import CampaignsPage    from "@/pages/CampaignsPage";
-import PaymentsPage     from "@/pages/PaymentsPage";
+import PaymentRequestsPage from "@/pages/PaymentRequestsPage";
 import PerformancePage  from "@/pages/PerformancePage";
 import KPIsPage         from "@/pages/KPIsPage";
 import ReportsPage      from "@/pages/ReportsPage";
@@ -64,7 +64,7 @@ export default function App() {
             <Route path="/leads"         element={<LeadsPage />} />
             <Route path="/deals"         element={<DealsPage />} />
             <Route path="/campaigns"     element={<CampaignsPage />} />
-            <Route path="/payments"      element={<PaymentsPage />} />
+            <Route path="/payments"      element={<PaymentRequestsPage />} />
             <Route path="/performance"   element={<PerformancePage />} />
             <Route path="/kpis"          element={<KPIsPage />} />
             <Route path="/reports"       element={<ReportsPage />} />

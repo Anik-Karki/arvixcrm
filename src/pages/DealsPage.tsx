@@ -274,7 +274,7 @@ export default function DealsPage() {
           revshare_percentage: createForm.revshare_percentage,
         },
       });
-      setCreateForm({ partner_id:"", title:"", commission_type:"CPA", cpa_amount:"", revshare_percentage:"", minimum_ftd:"0", payment_cycle:"Weekly", deal_start_date: new Date().toISOString().slice(0,10), amount:"0", notes:"" });
+      setCreateForm({ partner_id:"", assigned_to:"", title:"", commission_type:"CPA", cpa_amount:"", revshare_percentage:"", minimum_ftd:"0", payment_cycle:"Weekly", deal_start_date: new Date().toISOString().slice(0,10), amount:"0", notes:"" });
       await fetchDeals();
       setCreateSuccess(true);
       setTimeout(() => { setCreateSuccess(false); setCreateOpen(false); }, 1200);
@@ -372,69 +372,6 @@ export default function DealsPage() {
       setDeleteError(e instanceof Error ? e.message : "Failed to delete deal.");
     } finally {
       setDeleting(false);
-    }
-  };
-
-  // ── Edit deal ─────────────────────────────────────────────────────────────
-
-  const openEdit = (d: Deal) => {
-    setEditDeal(d);
-    setEditForm({
-      partner_id:          d.partner_id, // NOW REQUIRED
-      title:               d.title,
-      commission_type:     (d.commission_type ?? "CPA") as CommissionType,
-      cpa_amount:          String(d.cpa_amount ?? ""),
-      revshare_percentage: String(d.revshare_percentage ?? ""),
-      minimum_ftd:         String(d.minimum_ftd ?? "0"),
-      payment_cycle:       d.payment_cycle ?? "Weekly",
-      deal_start_date:     d.deal_start_date ?? new Date().toISOString().slice(0, 10),
-      amount:              String(d.amount ?? "0"),
-      notes:               d.notes ?? "",
-    });
-    setEditError(null);
-    setEditSuccess(false);
-  };
-
-  const handleEditSave = async () => {
-    if (!editDeal) return;
-    if (!editForm.title.trim()) { setEditError("Title is required."); return; }
-    setEditSaving(true); setEditError(null);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("deals") as any)
-        .update({
-          title:               editForm.title.trim(),
-          partner_name:        editForm.prospect_name || null,
-          commission_type:     editForm.commission_type,
-          cpa_amount:          parseFloat(editForm.cpa_amount) || 0,
-          revshare_percentage: parseFloat(editForm.revshare_percentage) || 0,
-          minimum_ftd:         parseInt(editForm.minimum_ftd) || 0,
-          payment_cycle:       editForm.payment_cycle,
-          deal_start_date:     editForm.deal_start_date || null,
-          amount:              parseFloat(editForm.amount) || 0,
-          notes:               editForm.notes || null,
-          updated_at:          new Date().toISOString(),
-        })
-        .eq("id", editDeal.id);
-      if (error) throw new Error(error.message);
-      // ── Audit log ──────────────────────────────────────────────────────────
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("activity_logs") as any).insert({
-        user_role:      "admin",
-        action:         "update_deal",
-        entity_type:    "deal",
-        entity_id:      editDeal.id,
-        entity_name:    editForm.title.trim(),
-        previous_value: { title: editDeal.title, commission_type: editDeal.commission_type, cpa_amount: editDeal.cpa_amount, revshare_percentage: editDeal.revshare_percentage },
-        new_value:      { title: editForm.title.trim(), commission_type: editForm.commission_type, cpa_amount: editForm.cpa_amount, revshare_percentage: editForm.revshare_percentage },
-      });
-      await fetchDeals();
-      setEditSuccess(true);
-      setTimeout(() => { setEditSuccess(false); setEditDeal(null); }, 1200);
-    } catch (e) {
-      setEditError(e instanceof Error ? e.message : "Failed to update deal.");
-    } finally {
-      setEditSaving(false);
     }
   };
 
