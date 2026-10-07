@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Search, RefreshCw, X, TrendingUp, CheckCircle,
-  DollarSign, FileText, Eye, Plus, AlertTriangle, Edit,
+  DollarSign, FileText, Eye, Plus, AlertTriangle, Edit, Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { Pagination } from "@/components/Pagination";
@@ -27,10 +27,17 @@ type DealStage      = "proposal" | "negotiation" | "legal_review" | "won" | "los
 type DealStatus     = "active" | "draft" | "paused" | "expired" | "cancelled";
 type CommissionType = "CPA" | "RevShare" | "Hybrid";
 
+interface Partner {
+  id: string;
+  name: string;
+  status: string;
+  image_url: string | null; // Account proof
+}
+
 interface Deal {
   id: string;
   title: string;
-  partner_id: string | null;
+  partner_id: string; // NOW REQUIRED (NOT NULL)
   partner_name: string | null;
   lead_id: string | null;
   commission_type: CommissionType | null;
@@ -92,6 +99,8 @@ const dateShort = (s: string | null | undefined) =>
 
 export default function DealsPage() {
   const [deals,   setDeals]   = useState<Deal[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [users, setUsers] = useState<{id: string; full_name: string; username: string; role: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [search,  setSearch]  = useState("");
   const [commFilter,   setCommFilter]   = useState<CommissionType | "all">("all");
@@ -105,7 +114,10 @@ export default function DealsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 25;
   const [createForm,    setCreateForm]    = useState({
-    title: "", prospect_name: "", commission_type: "CPA" as CommissionType,
+    partner_id: "", // REQUIRED FIELD
+    assigned_to: "", // Admin assigns deal to specific user
+    title: "", 
+    commission_type: "CPA" as CommissionType,
     cpa_amount: "", revshare_percentage: "", minimum_ftd: "0",
     payment_cycle: "Weekly", deal_start_date: new Date().toISOString().slice(0, 10),
     amount: "0", notes: "",
@@ -117,13 +129,57 @@ export default function DealsPage() {
   // Edit deal
   const [editDeal,     setEditDeal]     = useState<Deal | null>(null);
   const [editForm,     setEditForm]     = useState({
-    title: "", prospect_name: "", commission_type: "CPA" as CommissionType,
+    partner_id: "", // REQUIRED FIELD
+    title: "",
+    commission_type: "CPA" as CommissionType,
     cpa_amount: "", revshare_percentage: "", minimum_ftd: "0",
     payment_cycle: "Weekly", deal_start_date: "", amount: "0", notes: "",
   });
   const [editSaving,  setEditSaving]   = useState(false);
   const [editError,   setEditError]    = useState<string | null>(null);
   const [editSuccess, setEditSuccess]  = useState(false);
+
+  // Delete deal
+  const [deleteTarget, setDeleteTarget] = useState<Deal | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+
+  // ── Fetch Partners ────────────────────────────────────────────────────────
+
+  const fetchPartners = useCallback(async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from('partners') as any)
+        .select('id, name, status, image_url')
+        .eq('status', 'active')
+        .order('name');
+      setPartners(data ?? []);
+    } catch (err) {
+      console.error('Error fetching partners:', err);
+    }
+  }, []);
+
+  // ── Fetch Users (for Assign To dropdown) ──────────────────────────────────
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from('users') as any)
+        .select('id, full_name, username, role')
+        .in('role', ['user', 'manager'])
+        .eq('status', 'active')
+        .order('full_name');
+      setUsers(data ?? []);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPartners();
+    fetchUsers();
+  }, [fetchPartners, fetchUsers]);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
 
@@ -178,13 +234,18 @@ export default function DealsPage() {
   // ── Create deal ───────────────────────────────────────────────────────────
 
   const handleCreate = async () => {
+    // Validation: Partner is REQUIRED
+    if (!createForm.partner_id) {
+      setCreateError("Partner is required. Please select a partner from the dropdown.");
+      return;
+    }
     if (!createForm.title.trim()) { setCreateError("Title is required."); return; }
     setCreateSaving(true); setCreateError(null);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from("deals") as any).insert({
+        partner_id:          createForm.partner_id, // NOW REQUIRED
         title:               createForm.title.trim(),
-        partner_name:        createForm.prospect_name || null,
         commission_type:     createForm.commission_type,
         cpa_amount:          parseFloat(createForm.cpa_amount) || 0,
         revshare_percentage: parseFloat(createForm.revshare_percentage) || 0,
@@ -206,14 +267,14 @@ export default function DealsPage() {
         entity_type: "deal",
         entity_name: createForm.title.trim(),
         new_value: {
+          partner_id: createForm.partner_id,
           title: createForm.title.trim(),
           commission_type: createForm.commission_type,
           cpa_amount: createForm.cpa_amount,
           revshare_percentage: createForm.revshare_percentage,
-          prospect: createForm.prospect_name,
         },
       });
-      setCreateForm({ title:"", prospect_name:"", commission_type:"CPA", cpa_amount:"", revshare_percentage:"", minimum_ftd:"0", payment_cycle:"Weekly", deal_start_date: new Date().toISOString().slice(0,10), amount:"0", notes:"" });
+      setCreateForm({ partner_id:"", title:"", commission_type:"CPA", cpa_amount:"", revshare_percentage:"", minimum_ftd:"0", payment_cycle:"Weekly", deal_start_date: new Date().toISOString().slice(0,10), amount:"0", notes:"" });
       await fetchDeals();
       setCreateSuccess(true);
       setTimeout(() => { setCreateSuccess(false); setCreateOpen(false); }, 1200);
@@ -229,8 +290,98 @@ export default function DealsPage() {
   const openEdit = (d: Deal) => {
     setEditDeal(d);
     setEditForm({
+      partner_id:          d.partner_id,
       title:               d.title,
-      prospect_name:       d.partner_name ?? "",
+      commission_type:     (d.commission_type ?? "CPA") as CommissionType,
+      cpa_amount:          String(d.cpa_amount ?? ""),
+      revshare_percentage: String(d.revshare_percentage ?? ""),
+      minimum_ftd:         String(d.minimum_ftd ?? "0"),
+      payment_cycle:       d.payment_cycle ?? "Weekly",
+      deal_start_date:     d.deal_start_date ?? new Date().toISOString().slice(0, 10),
+      amount:              String(d.amount ?? "0"),
+      notes:               d.notes ?? "",
+    });
+    setEditError(null);
+    setEditSuccess(false);
+  };
+
+  const handleEditSave = async () => {
+    if (!editDeal) return;
+    if (!editForm.partner_id) { setEditError("Partner is required."); return; }
+    if (!editForm.title.trim()) { setEditError("Title is required."); return; }
+    setEditSaving(true); setEditError(null);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("deals") as any)
+        .update({
+          partner_id:          editForm.partner_id,
+          title:               editForm.title.trim(),
+          commission_type:     editForm.commission_type,
+          cpa_amount:          parseFloat(editForm.cpa_amount) || 0,
+          revshare_percentage: parseFloat(editForm.revshare_percentage) || 0,
+          minimum_ftd:         parseInt(editForm.minimum_ftd) || 0,
+          payment_cycle:       editForm.payment_cycle,
+          deal_start_date:     editForm.deal_start_date || null,
+          amount:              parseFloat(editForm.amount) || 0,
+          notes:               editForm.notes || null,
+          updated_at:          new Date().toISOString(),
+        })
+        .eq("id", editDeal.id);
+      if (error) throw new Error(error.message);
+      
+      // Audit log
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("activity_logs") as any).insert({
+        user_role:      "admin",
+        action:         "update_deal",
+        entity_type:    "deal",
+        entity_id:      editDeal.id,
+        entity_name:    editForm.title.trim(),
+        previous_value: { title: editDeal.title, commission_type: editDeal.commission_type },
+        new_value:      { title: editForm.title.trim(), commission_type: editForm.commission_type },
+      });
+      
+      await fetchDeals();
+      setEditSuccess(true);
+      setTimeout(() => { setEditSuccess(false); setEditDeal(null); }, 1500);
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : "Failed to update deal.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  // ── Delete handler ───────────────────────────────────────────────────────
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true); setDeleteError(null);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error} = await (supabase.from("deals") as any)
+        .delete().eq("id", deleteTarget.id);
+      if (error) throw new Error(error.message);
+      
+      const name = deleteTarget.title;
+      setDeleteTarget(null);
+      setSelected(null);
+      setDeals(prev => prev.filter(d => d.id !== deleteTarget.id));
+      setDeleteSuccess(`Deal "${name}" deleted successfully.`);
+      setTimeout(() => setDeleteSuccess(null), 3000);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete deal.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Edit deal ─────────────────────────────────────────────────────────────
+
+  const openEdit = (d: Deal) => {
+    setEditDeal(d);
+    setEditForm({
+      partner_id:          d.partner_id, // NOW REQUIRED
+      title:               d.title,
       commission_type:     (d.commission_type ?? "CPA") as CommissionType,
       cpa_amount:          String(d.cpa_amount ?? ""),
       revshare_percentage: String(d.revshare_percentage ?? ""),
@@ -319,6 +470,17 @@ export default function DealsPage() {
           </button>
         </div>
       </div>
+
+      {/* Success / Error banners */}
+      {deleteSuccess && (
+        <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center gap-3">
+          <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+          <p className="text-sm font-medium text-emerald-700">{deleteSuccess}</p>
+          <button onClick={() => setDeleteSuccess(null)} className="ml-auto text-emerald-400 hover:text-emerald-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -480,6 +642,11 @@ export default function DealsPage() {
                         className="p-1.5 rounded hover:bg-[var(--color-surface-subtle)] text-[var(--color-text-secondary)] hover:text-[var(--color-brand-blue)]">
                         <Edit className="h-4 w-4" />
                       </button>
+                      <button onClick={() => { setDeleteTarget(d); setDeleteError(null); }}
+                        title="Delete deal"
+                        className="p-1.5 rounded hover:bg-red-50 text-[var(--color-text-secondary)] hover:text-red-600">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -515,10 +682,35 @@ export default function DealsPage() {
                   className="field focus:field-focus" placeholder="e.g. BetMedia Corp — CPA Deal" autoFocus />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Prospect / Company</label>
-                <input type="text" value={createForm.prospect_name}
-                  onChange={e => setCreateForm(f => ({ ...f, prospect_name: e.target.value }))}
-                  className="field focus:field-focus" placeholder="Company name" />
+                <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">
+                  Partner * <span className="text-red-600 text-xs">(Required)</span>
+                </label>
+                <select 
+                  value={createForm.partner_id}
+                  onChange={e => setCreateForm(f => ({ ...f, partner_id: e.target.value }))}
+                  className="field focus:field-focus"
+                  required
+                >
+                  <option value="">Select a partner...</option>
+                  {partners.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                {partners.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1.5">
+                    No partners available. Create a partner first in the Partners page.
+                  </p>
+                )}
+                {/* Account Proof Preview */}
+                {createForm.partner_id && (() => {
+                  const selectedPartner = partners.find(p => p.id === createForm.partner_id);
+                  return selectedPartner?.image_url && (
+                    <div className="mt-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-2">Partner Account Proof</p>
+                      <img src={selectedPartner.image_url} alt="Partner Account Proof" className="w-full h-32 object-cover rounded-lg border border-emerald-300" />
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Commission Type</label>
@@ -679,6 +871,159 @@ export default function DealsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── Edit Deal Dialog ───────────────────────────────────────────────── */}
+      {editDeal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-[var(--color-border-default)]">
+              <h2 className="text-lg font-bold text-[var(--color-text-heading)]">Edit Deal</h2>
+              <button onClick={() => setEditDeal(null)}
+                className="p-2 rounded-lg hover:bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)]">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {editSuccess && (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2.5 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <p className="text-sm font-medium text-emerald-700">Deal updated successfully!</p>
+                </div>
+              )}
+              {editError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                  <p className="text-sm text-red-700">{editError}</p>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Deal Title *</label>
+                <input type="text" value={editForm.title}
+                  onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                  className="field focus:field-focus" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Partner *</label>
+                <select value={editForm.partner_id}
+                  onChange={e => setEditForm(f => ({ ...f, partner_id: e.target.value }))}
+                  className="field focus:field-focus">
+                  <option value="">Select partner...</option>
+                  {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                {editForm.partner_id && (() => {
+                  const partner = partners.find(p => p.id === editForm.partner_id);
+                  return partner?.image_url && (
+                    <div className="mt-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                      <p className="text-[10px] font-bold text-emerald-700 mb-2">Partner Account Proof</p>
+                      <img src={partner.image_url} alt="Proof" className="w-full h-32 object-cover rounded-lg" />
+                    </div>
+                  );
+                })()}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Commission Type</label>
+                <select value={editForm.commission_type}
+                  onChange={e => setEditForm(f => ({ ...f, commission_type: e.target.value as CommissionType }))}
+                  className="field focus:field-focus">
+                  <option value="CPA">CPA</option>
+                  <option value="RevShare">RevShare</option>
+                  <option value="Hybrid">Hybrid</option>
+                </select>
+              </div>
+              {(editForm.commission_type === "CPA" || editForm.commission_type === "Hybrid") && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">CPA Rate</label>
+                    <input type="text" value={editForm.cpa_amount}
+                      onChange={e => setEditForm(f => ({ ...f, cpa_amount: e.target.value }))}
+                      className="field focus:field-focus" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Min FTDs</label>
+                    <input type="text" value={editForm.minimum_ftd}
+                      onChange={e => setEditForm(f => ({ ...f, minimum_ftd: e.target.value }))}
+                      className="field focus:field-focus" />
+                  </div>
+                </div>
+              )}
+              {(editForm.commission_type === "RevShare" || editForm.commission_type === "Hybrid") && (
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">RevShare %</label>
+                  <input type="text" value={editForm.revshare_percentage}
+                    onChange={e => setEditForm(f => ({ ...f, revshare_percentage: e.target.value }))}
+                    className="field focus:field-focus" />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Payment Cycle</label>
+                  <select value={editForm.payment_cycle}
+                    onChange={e => setEditForm(f => ({ ...f, payment_cycle: e.target.value }))}
+                    className="field focus:field-focus">
+                    <option value="Weekly">Weekly</option>
+                    <option value="Bi-Weekly">Bi-Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Start Date</label>
+                  <input type="date" value={editForm.deal_start_date}
+                    onChange={e => setEditForm(f => ({ ...f, deal_start_date: e.target.value }))}
+                    className="field focus:field-focus" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">Notes</label>
+                <textarea value={editForm.notes}
+                  onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                  className="field focus:field-focus resize-none" rows={2} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 p-6 pt-0">
+              <button onClick={() => setEditDeal(null)}
+                className="px-4 py-2 rounded-lg border border-[var(--color-border-default)] text-sm font-medium hover:bg-[var(--color-surface-subtle)]">
+                Cancel
+              </button>
+              <button onClick={handleEditSave} disabled={editSaving}
+                className="px-4 py-2 rounded-lg bg-[var(--color-brand-blue)] text-white text-sm font-semibold hover:bg-[var(--color-brand-blue-hover)] disabled:opacity-60 flex items-center gap-2">
+                {editSaving ? "Saving…" : <><CheckCircle className="h-4 w-4" /> Save</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Dialog ─────────────────────────────────────────────────── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <p className="font-bold text-[var(--color-text-heading)]">Delete deal?</p>
+                <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                  <strong>{deleteTarget.title}</strong> will be permanently removed.
+                </p>
+              </div>
+            </div>
+            {deleteError && (
+              <p className="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">{deleteError}</p>
+            )}
+            <div className="flex gap-3">
+              <button onClick={() => { setDeleteTarget(null); setDeleteError(null); }}
+                className="flex-1 px-4 py-2 rounded-lg border border-[var(--color-border-default)] text-sm font-medium hover:bg-[var(--color-surface-subtle)]">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60">
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
