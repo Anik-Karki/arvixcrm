@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
 
 export default function LoginPage() {
@@ -36,133 +36,239 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left branding panel */}
-      <div className="hidden lg:flex flex-col justify-between bg-[var(--color-sidebar-navy)] p-12">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl overflow-hidden bg-[var(--color-brand-gold)] flex items-center justify-center">
-            <img src="/favicon.png" alt="Averix" className="w-full h-full object-contain p-1.5" />
+    <div style={{ minHeight: "100vh", display: "flex", background: "#f8f9fc" }}>
+
+      {/* ── Left panel ────────────────────────────────────────────── */}
+      <div
+        className="hidden lg:flex"
+        style={{
+          width: "44%",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          background: "linear-gradient(160deg, #0f172a 0%, #1a1040 60%, #0f172a 100%)",
+          padding: "52px 56px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Accent glows */}
+        <div style={{
+          position: "absolute", top: "-80px", right: "-80px",
+          width: "360px", height: "360px", borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(234,179,8,0.12) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", bottom: "-60px", left: "-60px",
+          width: "300px", height: "300px", borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+
+        {/* Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", position: "relative" }}>
+          <div style={{
+            width: "38px", height: "38px", borderRadius: "10px",
+            background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+          }}>
+            <img src="/favicon.png" alt="Averix" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
           </div>
           <div>
-            <p className="text-white font-bold text-lg tracking-tight">Averix Growth</p>
-            <p className="text-[#94A3B8] text-xs">Admin Portal</p>
+            <p style={{ color: "white", fontWeight: 700, fontSize: "15px", margin: 0, letterSpacing: "-0.2px" }}>Averix Growth</p>
+            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "11px", margin: 0, letterSpacing: "0.5px" }}>Admin Portal</p>
           </div>
         </div>
 
-        <div>
-          <div className="w-14 h-14 rounded-2xl bg-[var(--color-brand-gold)]/20 flex items-center justify-center mb-6">
-            <ShieldCheck className="h-7 w-7 text-[var(--color-brand-gold)]" />
-          </div>
-          <h2 className="text-3xl font-bold text-white leading-tight">
-            Admin Control Panel
-          </h2>
-          <p className="mt-3 text-[#94A3B8] text-sm leading-relaxed max-w-sm">
-            Manage users, teams, roles, and permissions for the entire Averix Growth platform.
-            Restricted to authorized administrators only.
+        {/* Main copy */}
+        <div style={{ position: "relative" }}>
+          <p style={{
+            display: "inline-block",
+            fontSize: "11px", fontWeight: 600, letterSpacing: "2px",
+            textTransform: "uppercase", color: "rgba(234,179,8,0.7)",
+            marginBottom: "20px",
+          }}>
+            Platform Administration
           </p>
-          <ul className="mt-8 space-y-3">
-            {["Create & manage user accounts", "Assign roles and permissions", "View all teams and activity", "Full platform oversight"].map(f => (
-              <li key={f} className="flex items-center gap-3 text-sm text-[#CBD5E1]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand-gold)] shrink-0" />
-                {f}
-              </li>
+          <h1 style={{
+            fontSize: "36px", fontWeight: 700, color: "white",
+            lineHeight: 1.15, letterSpacing: "-0.8px", margin: "0 0 20px",
+          }}>
+            Full control<br />
+            over the entire<br />
+            <span style={{ color: "rgba(234,179,8,0.85)" }}>platform.</span>
+          </h1>
+          <p style={{
+            color: "rgba(255,255,255,0.4)", fontSize: "14px",
+            lineHeight: 1.75, maxWidth: "300px", margin: 0,
+          }}>
+            Manage users, teams, roles, payments, and every operation across the Averix Growth CRM.
+          </p>
+
+          {/* Stat row */}
+          <div style={{
+            display: "flex", gap: "32px", marginTop: "40px",
+            paddingTop: "32px", borderTop: "1px solid rgba(255,255,255,0.08)",
+          }}>
+            {[
+              { value: "Users", label: "Create & manage" },
+              { value: "Roles", label: "Assign permissions" },
+              { value: "Oversight", label: "Full platform view" },
+            ].map(({ value, label }) => (
+              <div key={label}>
+                <p style={{ color: "white", fontWeight: 600, fontSize: "14px", margin: "0 0 3px" }}>{value}</p>
+                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "12px", margin: 0 }}>{label}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
 
-        <p className="text-[#475569] text-xs">
-          © {new Date().getFullYear()} Averix Growth. Authorized personnel only.
+        {/* Footer */}
+        <p style={{ color: "rgba(255,255,255,0.2)", fontSize: "11px", position: "relative" }}>
+          © {new Date().getFullYear()} Averix Growth · Authorized personnel only
         </p>
       </div>
 
-      {/* Right sign-in form */}
-      <div className="flex items-center justify-center px-5 py-12 bg-[var(--color-bg-main)]">
-        <div className="w-full max-w-sm">
+      {/* ── Right panel — form ─────────────────────────────────────── */}
+      <div style={{
+        flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "48px 32px", background: "#f8f9fc",
+      }}>
+        <div style={{ width: "100%", maxWidth: "380px" }}>
+
           {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-[var(--color-brand-gold)]">
-              <img src="/favicon.png" alt="Averix" className="w-full h-full object-contain p-1" />
+          <div className="lg:hidden" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "36px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#1a1040", overflow: "hidden" }}>
+              <img src="/favicon.png" alt="Averix" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "5px" }} />
             </div>
-            <p className="font-bold text-[var(--color-text-heading)]">Averix Admin</p>
+            <p style={{ fontWeight: 700, fontSize: "15px", margin: 0 }}>Averix Growth</p>
           </div>
 
-          <h1 className="text-2xl font-bold text-[var(--color-text-heading)] tracking-tight">
-            Admin sign in
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            This portal is restricted to administrators.
-          </p>
+          {/* Heading */}
+          <div style={{ marginBottom: "32px" }}>
+            <h2 style={{ fontSize: "26px", fontWeight: 700, margin: "0 0 8px", letterSpacing: "-0.5px", color: "#0f172a" }}>
+              Admin sign in
+            </h2>
+            <p style={{ color: "#94a3b8", fontSize: "14px", margin: 0 }}>
+              Restricted to authorized administrators
+            </p>
+          </div>
 
-          <form onSubmit={submit} className="mt-8 space-y-4">
-            <div>
-              <label htmlFor="identifier" className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">
-                Username or Email
-              </label>
-              <input
-                id="identifier"
-                type="text"
-                autoCapitalize="none"
-                autoCorrect="off"
-                autoComplete="username"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
-                className="field focus:field-focus"
-                placeholder="admin or admin@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-[var(--color-text-body)] mb-1.5">
-                Password
-              </label>
-              <div className="relative">
+          {/* Form card */}
+          <div style={{
+            background: "white", borderRadius: "16px",
+            border: "1px solid #e8eaf0",
+            padding: "28px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06)",
+          }}>
+            <form onSubmit={submit}>
+              {/* Username / Email */}
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{
+                  display: "block", fontSize: "13px", fontWeight: 600,
+                  color: "#374151", marginBottom: "7px",
+                }}>
+                  Username or Email
+                </label>
                 <input
-                  id="password"
-                  type={showPw ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
+                  type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="username"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
-                  className="field focus:field-focus pr-10"
-                  placeholder="••••••••"
+                  placeholder="admin or admin@averixgrowth.com"
+                  style={{
+                    width: "100%", padding: "10px 14px", borderRadius: "9px",
+                    border: "1.5px solid #e2e8f0", fontSize: "14px",
+                    color: "#0f172a", background: "#fafafa",
+                    boxSizing: "border-box", outline: "none", transition: "border-color 0.2s",
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = "#eab308"; e.target.style.background = "white"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#fafafa"; }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPw(v => !v)}
-                  tabIndex={-1}
-                  aria-label={showPw ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-body)] transition-colors"
-                >
-                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
-            </div>
 
-            {error && (
-              <p role="alert" className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
-                {error}
-              </p>
-            )}
+              {/* Password */}
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{
+                  display: "block", fontSize: "13px", fontWeight: 600,
+                  color: "#374151", marginBottom: "7px",
+                }}>
+                  Password
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPw ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                    placeholder="••••••••"
+                    style={{
+                      width: "100%", padding: "10px 42px 10px 14px", borderRadius: "9px",
+                      border: "1.5px solid #e2e8f0", fontSize: "14px",
+                      color: "#0f172a", background: "#fafafa",
+                      boxSizing: "border-box", outline: "none", transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = "#eab308"; e.target.style.background = "white"; }}
+                    onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.background = "#fafafa"; }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(v => !v)}
+                    tabIndex={-1}
+                    style={{
+                      position: "absolute", right: "13px", top: "50%", transform: "translateY(-50%)",
+                      background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 0,
+                    }}
+                  >
+                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
 
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full btn-base btn-primary disabled:opacity-60 disabled:cursor-not-allowed h-10 font-semibold"
-            >
-              {busy ? "Signing in…" : "Sign in to Admin"}
-            </button>
-          </form>
+              {/* Error */}
+              {error && (
+                <div style={{
+                  marginBottom: "16px", padding: "10px 14px", borderRadius: "9px",
+                  background: "#fef2f2", border: "1px solid #fecaca",
+                  fontSize: "13px", color: "#dc2626",
+                }}>
+                  {error}
+                </div>
+              )}
 
-          <div className="mt-6 rounded-xl border border-[var(--color-border-default)] bg-white p-4">
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="h-4 w-4 text-[var(--color-text-muted)] shrink-0 mt-0.5" />
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                Only accounts with the <strong>Admin</strong> role can access this portal.
-                Other roles are directed to the CRM portal.
-              </p>
-            </div>
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={busy || !identifier || !password}
+                style={{
+                  width: "100%", padding: "11px", borderRadius: "9px",
+                  background: busy || !identifier || !password
+                    ? "#fef9c3"
+                    : "linear-gradient(135deg, #1a1040, #374151)",
+                  color: busy || !identifier || !password ? "#a16207" : "white",
+                  fontWeight: 600, fontSize: "14px",
+                  border: "none", cursor: busy || !identifier || !password ? "not-allowed" : "pointer",
+                  letterSpacing: "0.1px",
+                  boxShadow: busy || !identifier || !password ? "none" : "0 4px 12px rgba(26,16,64,0.25)",
+                  transition: "all 0.2s",
+                }}
+              >
+                {busy ? "Signing in…" : "Sign in to Admin"}
+              </button>
+            </form>
           </div>
+
+          {/* Help note */}
+          <p style={{
+            textAlign: "center", color: "#94a3b8", fontSize: "12.5px",
+            marginTop: "20px", lineHeight: 1.6,
+          }}>
+            Only accounts with the Admin role can access this portal.
+          </p>
         </div>
       </div>
     </div>
