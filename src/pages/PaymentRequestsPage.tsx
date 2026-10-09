@@ -22,6 +22,16 @@ import { Pagination } from '../components/Pagination';
 
 type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'paid';
 
+interface UserProfile { id: string; full_name: string | null; role: string | null; }
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  team_leader: 'Team Leader',
+  affiliate_manager: 'Affiliate Manager',
+  finance: 'Finance',
+  security: 'Security',
+};
+
 interface DealCalculation {
   deal_id: string;
   deal_title: string;
@@ -71,6 +81,7 @@ export default function PaymentRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
   
   // Pagination
   const [page, setPage] = useState(1);
@@ -115,6 +126,18 @@ export default function PaymentRequestsPage() {
 
       setRequests(data || []);
       setTotalCount(count || 0);
+
+      // Fetch user profiles for all requests
+      const userIds = [...new Set((data || []).map((r: PaymentRequest) => r.user_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: userData } = await (supabase.from('users') as any)
+          .select('id, full_name, role')
+          .in('id', userIds);
+        const profileMap: Record<string, UserProfile> = {};
+        (userData || []).forEach((u: UserProfile) => { profileMap[u.id] = u; });
+        setUserProfiles(profileMap);
+      }
     } catch (err) {
       console.error('Error fetching payment requests:', err);
     } finally {
@@ -307,8 +330,10 @@ export default function PaymentRequestsPage() {
   const filteredRequests = requests.filter(req => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
+      const userName = (userProfiles[req.user_id]?.full_name || '').toLowerCase();
       return (
         req.id.toLowerCase().includes(query) ||
+        userName.includes(query) ||
         req.payment_method?.toLowerCase().includes(query) ||
         req.deals_included?.some(d => d.partner_name.toLowerCase().includes(query))
       );
@@ -441,7 +466,7 @@ export default function PaymentRequestsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[var(--color-surface-subtle)] border-b border-[var(--color-border-default)]">
-                  {['Request ID', 'Partner', 'Period', 'Deals', 'Amount', 'Payment Method', 'Status', 'Submitted', 'Actions'].map(h => (
+                  {['Requested By', 'Partner', 'Period', 'Deals', 'Amount', 'Payment Method', 'Status', 'Submitted', 'Actions'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
                       {h}
                     </th>
@@ -475,9 +500,19 @@ export default function PaymentRequestsPage() {
                         onClick={() => setViewingRequest(req)}
                         className="border-b border-[var(--color-border-subtle)] hover:bg-blue-50 cursor-pointer transition-colors">
                         <td className="px-4 py-3.5">
-                          <p className="font-mono text-xs font-medium text-[var(--color-text-heading)]">
-                            {req.id.slice(0, 8)}
-                          </p>
+                          {(() => {
+                            const profile = userProfiles[req.user_id];
+                            const displayName = profile?.full_name || req.user_id?.slice(0, 8) || '—';
+                            const roleLabel = profile?.role ? (ROLE_LABELS[profile.role] ?? profile.role) : null;
+                            return (
+                              <div>
+                                <p className="font-medium text-[var(--color-text-heading)]">{displayName}</p>
+                                {roleLabel && (
+                                  <p className="text-xs text-[var(--color-text-muted)]">{roleLabel}</p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3.5">
                           <p className="font-medium text-[var(--color-text-heading)]">
@@ -582,6 +617,19 @@ export default function PaymentRequestsPage() {
 
             {/* Dialog Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Requested By */}
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <p className="text-xs text-[var(--color-text-muted)] mb-1">Requested By</p>
+                <p className="font-semibold text-[var(--color-text-heading)]">
+                  {userProfiles[viewingRequest.user_id]?.full_name || viewingRequest.user_id?.slice(0, 8) || '—'}
+                </p>
+                {userProfiles[viewingRequest.user_id]?.role && (
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    {ROLE_LABELS[userProfiles[viewingRequest.user_id].role!] ?? userProfiles[viewingRequest.user_id].role}
+                  </p>
+                )}
+              </div>
+
               {/* Status & Amount */}
               <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200">
                 <div>

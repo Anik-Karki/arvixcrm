@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Search, RefreshCw, Plus, Edit, X, UserPlus,
-  AlertTriangle, ChevronRight, CheckCircle,
+  AlertTriangle, ChevronRight, CheckCircle, Trash2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { Pagination } from "@/components/Pagination";
@@ -134,6 +134,10 @@ export default function LeadsPage() {
   const [converting,   setConverting]   = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Delete lead
+  const [deletingLead,      setDeletingLead]      = useState<Lead | null>(null);
+  const [deleteLeadSuccess, setDeleteLeadSuccess] = useState<string | null>(null);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
 
@@ -298,6 +302,19 @@ export default function LeadsPage() {
     setConvertError(null);
   };
 
+  // ── Delete lead (admin can delete any lead) ───────────────────────────────
+
+  const handleDeleteLead = async () => {
+    if (!deletingLead) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from('leads') as any).delete().eq('id', deletingLead.id);
+    if (error) { setFormError(error.message); return; }
+    setLeads(prev => prev.filter(l => l.id !== deletingLead.id));
+    setDeleteLeadSuccess(`Lead "${deletingLead.name}" deleted successfully`);
+    setDeletingLead(null);
+    setTimeout(() => setDeleteLeadSuccess(null), 3000);
+  };
+
   // ✅ NEW: Handle image upload for partner proof
   const handleImageUpload = async (file: File) => {
     if (!file) return;
@@ -391,6 +408,16 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
 
+      {/* Delete success banner */}
+      {deleteLeadSuccess && (
+        <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center gap-3">
+          <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+          <p className="text-sm font-medium text-emerald-700">{deleteLeadSuccess}</p>
+          <button onClick={() => setDeleteLeadSuccess(null)} className="ml-auto text-emerald-400 hover:text-emerald-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -567,6 +594,14 @@ export default function LeadsPage() {
                           Lost
                         </button>
                       )}
+
+                      {/* Delete lead */}
+                      <button
+                        onClick={() => setDeletingLead(l)}
+                        title="Delete lead"
+                        className="p-1.5 rounded hover:bg-red-50 text-[var(--color-text-secondary)] hover:text-red-600">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -1032,6 +1067,30 @@ export default function LeadsPage() {
             </div>
           </aside>
         </>
+      )}
+
+      {/* ── Delete Lead confirmation modal ─────────────────────────────────── */}
+      {deletingLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 className="text-lg font-bold text-[var(--color-text-heading)]">Delete Lead</h2>
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Are you sure you want to delete <strong>{deletingLead.name}</strong>? This cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                onClick={() => setDeletingLead(null)}
+                className="px-4 py-2 rounded-lg border border-[var(--color-border-default)] text-sm font-medium hover:bg-[var(--color-surface-subtle)]">
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteLead}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
